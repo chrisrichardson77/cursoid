@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "dev.agentsforcursor"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "dev.agentsforcursor"

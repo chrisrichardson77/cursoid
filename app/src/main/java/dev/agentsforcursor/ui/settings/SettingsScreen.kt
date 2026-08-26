@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.OpenInNew
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,6 +47,7 @@ import dev.agentsforcursor.util.openUrl
 
 private const val DOCS_URL = "https://cursor.com/docs/cloud-agent/api/endpoints"
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
     val viewModel = appViewModel { SettingsViewModel(container) }
