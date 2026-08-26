@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Agents</string>
+    <string name="channel_turn_done_name">Finished turns</string>
+    <string name="channel_turn_done_description">Posted when a cloud agent finishes a turn and is waiting on you.</string>
+    <string name="channel_tracking_name">Running agents</string>
+    <string name="channel_tracking_description">An ongoing notification that follows an agent while it works.</string>
+</resources>
