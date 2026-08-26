@@ -1,11 +1,16 @@
 # kotlinx.serialization keeps generated serializers via companion objects.
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.**
--keepclassmembers class dev.agentsforcursor.data.net.** {
+-keepclassmembers class dev.cursoid.data.net.** {
     *** Companion;
 }
--keepclasseswithmembers class dev.agentsforcursor.data.net.** {
+-keepclasseswithmembers class dev.cursoid.data.net.** {
     kotlinx.serialization.KSerializer serializer(...);
+}
+
+# WorkManager instantiates workers reflectively by class name.
+-keep class * extends androidx.work.ListenableWorker {
+    <init>(android.content.Context, androidx.work.WorkerParameters);
 }
 
 # OkHttp bundles optional platform integrations that are absent on Android.

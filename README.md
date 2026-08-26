@@ -1,4 +1,4 @@
-# Agents for Cursor — an Android client for Cursor cloud agents
+# Cursoid — an Android client for Cursor cloud agents
 
 Cursor ships a native iOS app. On Android the official answer is still the web PWA at
 [cursor.com/agents](https://cursor.com/agents). This is a native Android client that closes most of
@@ -42,10 +42,33 @@ These are limits of the public API, not oversights:
 - **Prompts are cached locally.** Runs never return their prompt text, so a conversation only shows
   your side for turns sent from this device. Everything else shows the agent's replies.
 
-## Running it
+## Sideloading a build
 
-Requirements: JDK 17+, the Android SDK with platform 37 and build-tools 37, and a device or
-emulator on API 26+.
+Prebuilt APKs live in [`dist/`](dist), signed and ready to install on Android 8.0 (API 26) or newer:
+
+| File | Size | What it is |
+| --- | --- | --- |
+| `cursoid-0.1.0.apk` | 2.2 MB | Release build, R8-minified. Start here — it is what a Play build would be. |
+| `cursoid-0.1.0-debug.apk` | 22 MB | Unminified fallback for isolating an R8 problem. |
+
+They use different application IDs (`dev.cursoid` and `dev.cursoid.debug`) and different launcher
+labels, so both can sit on the phone at once.
+
+Over USB:
+
+```bash
+adb install -r dist/cursoid-0.1.0.apk
+```
+
+Or copy the APK to the phone and open it, allowing installs from your file manager when prompted.
+Android will warn about an unknown developer, which is expected for a self-signed build.
+
+If the release build misbehaves where the debug build doesn't, that points at the R8 configuration in
+[`app/proguard-rules.pro`](app/proguard-rules.pro) rather than app logic.
+
+## Building it yourself
+
+Requirements: JDK 17+ and the Android SDK with platform 37 and build-tools 37.
 
 ```bash
 echo "sdk.dir=$ANDROID_HOME" > local.properties
@@ -53,6 +76,31 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
 ./gradlew :app:installDebug     # with a device attached
 ./gradlew :app:testDebugUnitTest
 ```
+
+Release builds are signed only when a key is configured, so a fresh clone still builds. To sign your
+own, create a keystore and a `keystore.properties` at the repo root (both are gitignored):
+
+```bash
+keytool -genkeypair -keystore cursoid.jks -storetype PKCS12 -keyalg RSA -keysize 4096 \
+  -validity 10000 -alias cursoid -dname "CN=Cursoid"
+
+cat > keystore.properties <<'EOF'
+storeFile=/absolute/path/to/cursoid.jks
+storePassword=…
+keyAlias=cursoid
+keyPassword=…
+EOF
+```
+
+`CURSOID_KEYSTORE`, `CURSOID_KEYSTORE_PASSWORD`, `CURSOID_KEY_ALIAS`, and `CURSOID_KEY_PASSWORD`
+work too, which is the easier path in CI. Signing is skipped entirely if neither is present.
+
+### Before a Play listing
+
+The name is a portmanteau of "cursor" and the *-oid* of "android", and this is an unofficial client,
+so keep the title free of anything implying endorsement and leave the "not affiliated with Anysphere"
+line on the sign-in and Settings screens. Play App Signing means the upload key does not have to be
+the one that signed the APKs above.
 
 ### Signing in
 
@@ -73,7 +121,7 @@ the whole UI offline. Toggle it off in Settings.
 ## Layout
 
 ```
-app/src/main/java/dev/agentsforcursor/
+app/src/main/java/dev/cursoid/
 ├── data/
 │   ├── net/          CursorApi (OkHttp), DTOs, SSE parser
 │   ├── store/        Keystore encryption, DataStore settings and prompt cache

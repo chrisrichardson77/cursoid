@@ -1,16 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Content stays inside the 66dp adaptive-icon safe zone so circular masks don't clip it. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:pathData="M54,28 A26,26 0 1,1 28,54"
-        android:fillColor="#00000000"
-        android:strokeColor="#7C5CFF"
-        android:strokeWidth="8"
+        android:pathData="M42,41 L37,29"
+        android:strokeColor="#8B6CFF"
+        android:strokeWidth="5"
         android:strokeLineCap="round" />
     <path
-        android:pathData="M45,43 L71,55 L59,59 L55,71 Z"
-        android:fillColor="#F2F0FA" />
+        android:pathData="M66,41 L71,29"
+        android:strokeColor="#8B6CFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M42,40 h24 a12,12 0 0 1 12,12 v20 a12,12 0 0 1 -12,12 h-24 a12,12 0 0 1 -12,-12 v-20 a12,12 0 0 1 12,-12 z"
+        android:fillColor="#8B6CFF" />
+    <path
+        android:pathData="M43,50 L67,61 L56,64.5 L52,76 Z"
+        android:fillColor="#12101F" />
 </vector>

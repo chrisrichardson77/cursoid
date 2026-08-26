@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AgentsForCursor"
+rootProject.name = "Cursoid"
 
 include(":app")
