@@ -110,10 +110,13 @@ escape hatch.
 ./gradlew :app:assembleRelease     # checks the R8 configuration
 ```
 
-Two kinds of test, both on the JVM:
+33 tests, all on the JVM, in three groups:
 
-- **Logic.** The SSE decoder — frame dispatch, event ids, multi-line payloads, comments, and a full
-  turn mapped to typed events — plus relative time, duration, and token formatting.
+- **Networking.** `CursorApiTest` runs the real client against a `com.sun.net.httpserver` instance on
+  loopback: the bearer header, query and body shapes, JSON mapping, an end-to-end SSE turn with
+  `Last-Event-ID`, and the 401 / 409 `agent_busy` / 410 `stream_expired` / 429 paths.
+- **Logic.** The SSE decoder on its own — frame dispatch, event ids, multi-line payloads, comments —
+  plus the demo repository's mutations and the relative time, duration, and token formatters.
 - **Screens.** `ScreenRenderTest` renders each screen through Robolectric's native graphics and
   writes a PNG per state to `app/build/screenshots/`. Every screen is split into a stateful
   `XScreen(container, …)` wrapper and a stateless `XContent(state, …)`, so the tests drive the real
