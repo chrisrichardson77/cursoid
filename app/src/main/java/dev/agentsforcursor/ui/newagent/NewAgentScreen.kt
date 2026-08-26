@@ -59,7 +59,6 @@ import dev.agentsforcursor.ui.components.SectionLabel
 import dev.agentsforcursor.ui.components.rememberVoiceInput
 import dev.agentsforcursor.ui.theme.MonoStyle
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewAgentScreen(
     container: AppContainer,
@@ -69,17 +68,45 @@ fun NewAgentScreen(
     val viewModel = appViewModel { NewAgentViewModel(container) }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    LaunchedEffect(state.launched) {
+        state.launched?.let { onLaunched(it.agentId) }
+    }
+
+    NewAgentContent(
+        state = state,
+        onBack = onBack,
+        onPromptChange = viewModel::setPrompt,
+        onRepoChange = viewModel::setRepo,
+        onReloadRepos = viewModel::loadRepos,
+        onStartingRefChange = viewModel::setStartingRef,
+        onModelChange = viewModel::setModel,
+        onModeChange = viewModel::setMode,
+        onAutoCreatePRChange = viewModel::setAutoCreatePR,
+        onWorkOnCurrentBranchChange = viewModel::setWorkOnCurrentBranch,
+        onLaunch = viewModel::launch,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NewAgentContent(
+    state: NewAgentViewModel.State,
+    onBack: () -> Unit,
+    onPromptChange: (String) -> Unit,
+    onRepoChange: (String?) -> Unit,
+    onReloadRepos: () -> Unit,
+    onStartingRefChange: (String) -> Unit,
+    onModelChange: (ModelChoice?) -> Unit,
+    onModeChange: (AgentMode) -> Unit,
+    onAutoCreatePRChange: (Boolean) -> Unit,
+    onWorkOnCurrentBranchChange: (Boolean) -> Unit,
+    onLaunch: () -> Unit,
+) {
     var repoSheet by remember { mutableStateOf(false) }
     var modelSheet by remember { mutableStateOf(false) }
 
     val voice = rememberVoiceInput("Describe the task") { spoken ->
-        viewModel.setPrompt(
-            if (state.prompt.isBlank()) spoken else "${state.prompt} $spoken",
-        )
-    }
-
-    LaunchedEffect(state.launched) {
-        state.launched?.let { onLaunched(it.agentId) }
+        onPromptChange(if (state.prompt.isBlank()) spoken else "${state.prompt} $spoken")
     }
 
     Scaffold(
@@ -101,7 +128,7 @@ fun NewAgentScreen(
                         .padding(16.dp),
                 ) {
                     Button(
-                        onClick = viewModel::launch,
+                        onClick = onLaunch,
                         enabled = state.canLaunch,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -136,7 +163,7 @@ fun NewAgentScreen(
                 SectionLabel("Task")
                 OutlinedTextField(
                     value = state.prompt,
-                    onValueChange = viewModel::setPrompt,
+                    onValueChange = onPromptChange,
                     placeholder = {
                         Text("What should the agent do? Include the acceptance criteria.")
                     },
@@ -172,7 +199,7 @@ fun NewAgentScreen(
                 }
                 OutlinedTextField(
                     value = state.startingRef,
-                    onValueChange = viewModel::setStartingRef,
+                    onValueChange = onStartingRefChange,
                     label = { Text("Starting branch") },
                     placeholder = { Text("Defaults to the repo's default branch") },
                     singleLine = true,
@@ -195,7 +222,7 @@ fun NewAgentScreen(
                     AgentMode.entries.forEachIndexed { index, mode ->
                         SegmentedButton(
                             selected = state.mode == mode,
-                            onClick = { viewModel.setMode(mode) },
+                            onClick = { onModeChange(mode) },
                             shape = SegmentedButtonDefaults.itemShape(
                                 index = index,
                                 count = AgentMode.entries.size,
@@ -221,13 +248,13 @@ fun NewAgentScreen(
                     title = "Open a pull request",
                     subtitle = "Cursor opens the PR as soon as the first turn completes.",
                     checked = state.autoCreatePR,
-                    onCheckedChange = viewModel::setAutoCreatePR,
+                    onCheckedChange = onAutoCreatePRChange,
                 )
                 ToggleRow(
                     title = "Commit to the starting branch",
                     subtitle = "Off by default, which pushes to a fresh cursor/… branch instead.",
                     checked = state.workOnCurrentBranch,
-                    onCheckedChange = viewModel::setWorkOnCurrentBranch,
+                    onCheckedChange = onWorkOnCurrentBranchChange,
                 )
             }
 
@@ -245,9 +272,9 @@ fun NewAgentScreen(
                 loading = state.reposLoading,
                 error = state.reposError,
                 selected = state.repoUrl,
-                onRetry = viewModel::loadRepos,
+                onRetry = onReloadRepos,
                 onSelect = { url ->
-                    viewModel.setRepo(url)
+                    onRepoChange(url)
                     repoSheet = false
                 },
             )
@@ -261,7 +288,7 @@ fun NewAgentScreen(
                 choices = state.models,
                 selected = state.selectedModel,
                 onSelect = { choice ->
-                    viewModel.setModel(choice)
+                    onModelChange(choice)
                     modelSheet = false
                 },
             )

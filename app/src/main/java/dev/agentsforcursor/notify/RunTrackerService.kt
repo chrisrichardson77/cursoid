@@ -1,13 +1,16 @@
 package dev.agentsforcursor.notify
 
+import android.Manifest
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import dev.agentsforcursor.AgentsApplication
 import dev.agentsforcursor.model.StreamEvent
 import kotlinx.coroutines.CoroutineScope
@@ -107,7 +110,13 @@ class RunTrackerService : Service() {
     }
 
     private fun update(agentId: String, agentName: String, line: String, finished: Boolean) {
-        if (!Notifications.canPost(this)) return
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
         NotificationManagerCompat.from(this).notify(
             Notifications.TRACKING_NOTIFICATION_ID,
             Notifications.trackingNotification(this, agentId, agentName, line, finished),

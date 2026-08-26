@@ -360,7 +360,7 @@ class AgentDetailViewModel(
     override fun onCleared() {
         streamJob?.cancel()
         pollJob?.cancel()
-        super.onCleared()
+
     }
 
     private companion object {

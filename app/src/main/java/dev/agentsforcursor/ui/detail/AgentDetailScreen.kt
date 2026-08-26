@@ -31,9 +31,9 @@ import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.OpenInNew
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Psychology
-import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material.icons.outlined.Unarchive
 import androidx.compose.material3.AlertDialog
@@ -63,9 +63,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
+import dev.agentsforcursor.util.rememberClipboardCopy
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -82,7 +81,6 @@ import dev.agentsforcursor.ui.theme.MonoStyle
 import dev.agentsforcursor.util.TimeFormat
 import dev.agentsforcursor.util.openUrl
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgentDetailScreen(
     container: AppContainer,
@@ -91,8 +89,43 @@ fun AgentDetailScreen(
 ) {
     val viewModel = appViewModel(key = agentId) { AgentDetailViewModel(container, agentId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(state.deleted) {
+        if (state.deleted) onBack()
+    }
+
+    AgentDetailContent(
+        state = state,
+        agentId = agentId,
+        onBack = onBack,
+        onSend = viewModel::send,
+        onCancel = viewModel::cancel,
+        onRetry = viewModel::load,
+        onDismissError = viewModel::dismissNotice,
+        onLoadExtras = viewModel::loadExtras,
+        onSetArchived = viewModel::setArchived,
+        onDelete = viewModel::delete,
+        resolveArtifact = viewModel::artifactUrl,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AgentDetailContent(
+    state: AgentDetailViewModel.State,
+    agentId: String,
+    onBack: () -> Unit,
+    onSend: (String) -> Unit,
+    onCancel: () -> Unit,
+    onRetry: () -> Unit,
+    onDismissError: () -> Unit,
+    onLoadExtras: () -> Unit,
+    onSetArchived: (Boolean) -> Unit,
+    onDelete: () -> Unit,
+    resolveArtifact: suspend (String) -> String?,
+) {
     val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
+    val copyToClipboard = rememberClipboardCopy()
 
     var menuOpen by remember { mutableStateOf(false) }
     var showDetails by rememberSaveable { mutableStateOf(false) }
@@ -101,10 +134,6 @@ fun AgentDetailScreen(
 
     val listState = rememberLazyListState()
     val timeline = state.timeline
-
-    LaunchedEffect(state.deleted) {
-        if (state.deleted) onBack()
-    }
 
     LaunchedEffect(timeline.size, state.live?.assistant?.length) {
         if (timeline.isNotEmpty()) {
@@ -131,7 +160,7 @@ fun AgentDetailScreen(
                     IconButton(
                         onClick = {
                             showDetails = true
-                            viewModel.loadExtras()
+                            onLoadExtras()
                         },
                     ) {
                         Icon(Icons.Outlined.Inventory2, contentDescription = "Run details")
@@ -143,7 +172,7 @@ fun AgentDetailScreen(
                         state.detail?.summary?.url?.let { url ->
                             DropdownMenuItem(
                                 text = { Text("Open in Cursor") },
-                                leadingIcon = { Icon(Icons.Outlined.OpenInNew, null) },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Outlined.OpenInNew, null) },
                                 onClick = {
                                     menuOpen = false
                                     openUrl(context, url)
@@ -155,7 +184,7 @@ fun AgentDetailScreen(
                             leadingIcon = { Icon(Icons.Outlined.ContentCopy, null) },
                             onClick = {
                                 menuOpen = false
-                                clipboard.setText(AnnotatedString(agentId))
+                                copyToClipboard(agentId)
                             },
                         )
                         state.activeRun?.let { run ->
@@ -178,7 +207,7 @@ fun AgentDetailScreen(
                             leadingIcon = { Icon(Icons.Outlined.Unarchive, null) },
                             onClick = {
                                 menuOpen = false
-                                viewModel.setArchived(!state.isArchived)
+                                onSetArchived(!state.isArchived)
                             },
                         )
                         DropdownMenuItem(
@@ -201,10 +230,10 @@ fun AgentDetailScreen(
                 streaming = state.streaming || state.activeRun != null,
                 archived = state.isArchived,
                 onSend = {
-                    viewModel.send(draft)
+                    onSend(draft)
                     draft = ""
                 },
-                onCancel = viewModel::cancel,
+                onCancel = onCancel,
             )
         },
     ) { padding ->
@@ -217,7 +246,7 @@ fun AgentDetailScreen(
                 state.loading -> SkeletonList()
 
                 state.detail == null && state.error != null -> Column(Modifier.padding(16.dp)) {
-                    ErrorCard(message = state.error!!, onRetry = viewModel::load)
+                    ErrorCard(message = state.error, onRetry = onRetry)
                 }
 
                 else -> LazyColumn(
@@ -226,12 +255,15 @@ fun AgentDetailScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     item("header") {
-                        AgentHeader(state = state)
+                        AgentHeader(
+                            state = state,
+                            onOpenPullRequest = { openUrl(context, it) },
+                        )
                     }
 
                     if (state.error != null) {
                         item("error") {
-                            ErrorCard(message = state.error!!, onRetry = viewModel::dismissNotice)
+                            ErrorCard(message = state.error, onRetry = onDismissError)
                         }
                     }
 
@@ -254,7 +286,7 @@ fun AgentDetailScreen(
         DetailsSheet(
             state = state,
             onDismiss = { showDetails = false },
-            resolveArtifact = viewModel::artifactUrl,
+            resolveArtifact = resolveArtifact,
         )
     }
 
@@ -272,7 +304,7 @@ fun AgentDetailScreen(
                 TextButton(
                     onClick = {
                         confirmDelete = false
-                        viewModel.delete()
+                        onDelete()
                     },
                 ) { Text("Delete") }
             },
@@ -284,7 +316,10 @@ fun AgentDetailScreen(
 }
 
 @Composable
-private fun AgentHeader(state: AgentDetailViewModel.State) {
+private fun AgentHeader(
+    state: AgentDetailViewModel.State,
+    onOpenPullRequest: (String) -> Unit,
+) {
     val detail = state.detail ?: return
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -311,8 +346,33 @@ private fun AgentHeader(state: AgentDetailViewModel.State) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (detail.autoCreatePR) {
-                Text(
+
+            val branch = state.branches.firstOrNull()
+            when {
+                branch != null -> {
+                    branch.branch?.let { name ->
+                        Text(
+                            text = name,
+                            style = MonoStyle,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    branch.prUrl?.let { prUrl ->
+                        OutlinedButton(onClick = { onOpenPullRequest(prUrl) }) {
+                            Icon(
+                                Icons.AutoMirrored.Outlined.OpenInNew,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Review pull request")
+                        }
+                    }
+                }
+
+                detail.autoCreatePR -> Text(
                     text = "Opens a pull request when it finishes",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -528,7 +588,7 @@ private fun Composer(
                                 strokeWidth = 2.dp,
                             )
                         } else {
-                            Icon(Icons.Outlined.Send, contentDescription = "Send")
+                            Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = "Send")
                         }
                     }
                 }

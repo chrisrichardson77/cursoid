@@ -18,7 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.OpenInNew
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,7 +47,6 @@ import dev.agentsforcursor.util.openUrl
 
 private const val DOCS_URL = "https://cursor.com/docs/cloud-agent/api/endpoints"
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
     val viewModel = appViewModel { SettingsViewModel(container) }
@@ -59,6 +58,35 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
     ) { granted ->
         viewModel.setNotifications(granted)
     }
+
+    SettingsContent(
+        state = state,
+        onBack = onBack,
+        onNotificationsChange = { enabled ->
+            val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                enabled &&
+                !Notifications.canPost(context)
+            if (needsPermission) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                viewModel.setNotifications(enabled)
+            }
+        },
+        onDemoChange = viewModel::setDemo,
+        onSignOut = viewModel::signOut,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsContent(
+    state: SettingsViewModel.State,
+    onBack: () -> Unit,
+    onNotificationsChange: (Boolean) -> Unit,
+    onDemoChange: (Boolean) -> Unit,
+    onSignOut: () -> Unit,
+) {
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -116,16 +144,7 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
                     title = "Tell me when a turn finishes",
                     subtitle = "Checks your agents in the background about every 15 minutes.",
                     checked = state.notifications,
-                    onCheckedChange = { enabled ->
-                        val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                            enabled &&
-                            !Notifications.canPost(context)
-                        if (needsPermission) {
-                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        } else {
-                            viewModel.setNotifications(enabled)
-                        }
-                    },
+                    onCheckedChange = onNotificationsChange,
                 )
             }
 
@@ -135,10 +154,10 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
                     title = "Demo data",
                     subtitle = "Browse a fake inbox without calling the Cursor API.",
                     checked = state.demo,
-                    onCheckedChange = viewModel::setDemo,
+                    onCheckedChange = onDemoChange,
                 )
                 OutlinedButton(
-                    onClick = viewModel::signOut,
+                    onClick = onSignOut,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
@@ -167,7 +186,7 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
                     Text("Cloud Agents API docs")
                     Spacer(Modifier.width(6.dp))
                     Icon(
-                        Icons.Outlined.OpenInNew,
+                        Icons.AutoMirrored.Outlined.OpenInNew,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
                     )

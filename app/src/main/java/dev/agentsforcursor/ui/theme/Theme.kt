@@ -1,6 +1,6 @@
 package dev.agentsforcursor.ui.theme
 
-import android.app.Activity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
@@ -9,7 +9,6 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -131,11 +130,11 @@ fun AgentsTheme(
     content: @Composable () -> Unit,
 ) {
     val colors = if (darkTheme) DarkColors else LightColors
-    val view = LocalContext.current as? Activity
+    val activity = LocalActivity.current
 
-    if (view != null) {
+    if (activity != null) {
         SideEffect {
-            WindowCompat.getInsetsController(view.window, view.window.decorView)
+            WindowCompat.getInsetsController(activity.window, activity.window.decorView)
                 .isAppearanceLightStatusBars = !darkTheme
         }
     }

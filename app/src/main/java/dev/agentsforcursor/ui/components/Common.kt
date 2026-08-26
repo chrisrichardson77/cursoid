@@ -48,8 +48,8 @@ import dev.agentsforcursor.ui.theme.StatusSuccess
 fun StatusPill(
     label: String,
     color: Color,
-    pulsing: Boolean = false,
     modifier: Modifier = Modifier,
+    pulsing: Boolean = false,
 ) {
     val alpha = if (pulsing) {
         val transition = rememberInfiniteTransition(label = "pulse")
@@ -202,8 +202,8 @@ fun ErrorCard(
 /** Skeleton rows shown on first load, so the list does not pop in from a blank screen. */
 @Composable
 fun SkeletonList(
-    rows: Int = 5,
     modifier: Modifier = Modifier,
+    rows: Int = 5,
     contentPadding: PaddingValues = PaddingValues(16.dp),
 ) {
     val transition = rememberInfiniteTransition(label = "skeleton")

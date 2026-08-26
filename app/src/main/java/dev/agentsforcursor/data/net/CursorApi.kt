@@ -128,9 +128,9 @@ class CursorApi(
         call.execute().use { response ->
             val body = response.body
             if (!response.isSuccessful) {
-                throw errorFor(response.code, body?.string().orEmpty())
+                throw errorFor(response.code, body.string())
             }
-            val source = body?.source() ?: return@use
+            val source = body.source()
             val parser = SseParser()
             while (true) {
                 currentCoroutineContext().ensureActive()
@@ -169,7 +169,7 @@ class CursorApi(
         val call = client.newCall(authorized)
         currentCoroutineContext().job.invokeOnCompletion { call.cancel() }
         call.execute().use { response ->
-            val text = response.body?.string().orEmpty()
+            val text = response.body.string()
             if (!response.isSuccessful) throw errorFor(response.code, text)
             text
         }

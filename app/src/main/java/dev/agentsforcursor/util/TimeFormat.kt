@@ -4,6 +4,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 object TimeFormat {
 
@@ -45,8 +46,8 @@ object TimeFormat {
     }
 
     fun compactTokens(count: Long): String = when {
-        count >= 1_000_000 -> String.format("%.1fM", count / 1_000_000.0)
-        count >= 1_000 -> String.format("%.1fk", count / 1_000.0)
+        count >= 1_000_000 -> String.format(Locale.US, "%.1fM", count / 1_000_000.0)
+        count >= 1_000 -> String.format(Locale.US, "%.1fk", count / 1_000.0)
         else -> count.toString()
     }
 }

@@ -19,7 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Key
-import androidx.compose.material.icons.outlined.OpenInNew
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
@@ -61,6 +61,22 @@ private const val API_KEYS_URL = "https://cursor.com/dashboard/api"
 fun SignInScreen(container: AppContainer) {
     val viewModel = appViewModel { SignInViewModel(container) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    SignInContent(
+        state = state,
+        onApiKeyChange = viewModel::onApiKeyChange,
+        onSubmit = viewModel::submit,
+        onUseDemoData = viewModel::useDemoData,
+    )
+}
+
+@Composable
+fun SignInContent(
+    state: SignInViewModel.State,
+    onApiKeyChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onUseDemoData: () -> Unit,
+) {
     var revealed by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -104,7 +120,7 @@ fun SignInScreen(container: AppContainer) {
 
                 OutlinedTextField(
                     value = state.apiKey,
-                    onValueChange = viewModel::onApiKeyChange,
+                    onValueChange = onApiKeyChange,
                     label = { Text("Cursor API key") },
                     placeholder = { Text("key_…") },
                     singleLine = true,
@@ -130,7 +146,7 @@ fun SignInScreen(container: AppContainer) {
                         PasswordVisualTransformation()
                     },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-                    keyboardActions = KeyboardActions(onGo = { viewModel.submit() }),
+                    keyboardActions = KeyboardActions(onGo = { onSubmit() }),
                     modifier = Modifier.fillMaxWidth(),
                 )
 
@@ -143,7 +159,7 @@ fun SignInScreen(container: AppContainer) {
                     Text("Create a key in the Cursor dashboard")
                     Spacer(Modifier.width(6.dp))
                     Icon(
-                        Icons.Outlined.OpenInNew,
+                        Icons.AutoMirrored.Outlined.OpenInNew,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
                     )
@@ -157,7 +173,7 @@ fun SignInScreen(container: AppContainer) {
                 Spacer(Modifier.height(20.dp))
 
                 Button(
-                    onClick = viewModel::submit,
+                    onClick = onSubmit,
                     enabled = state.apiKey.isNotBlank() && !state.checking,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -179,7 +195,7 @@ fun SignInScreen(container: AppContainer) {
                 Spacer(Modifier.height(10.dp))
 
                 TextButton(
-                    onClick = viewModel::useDemoData,
+                    onClick = onUseDemoData,
                     enabled = !state.checking,
                     modifier = Modifier.fillMaxWidth(),
                 ) {

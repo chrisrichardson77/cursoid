@@ -14,10 +14,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CallSplit
+import androidx.compose.material.icons.automirrored.outlined.CallSplit
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.OpenInNew
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,9 +34,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
+import dev.agentsforcursor.util.rememberClipboardCopy
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import dev.agentsforcursor.model.Artifact
@@ -54,7 +53,7 @@ fun DetailsSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
+    val copyToClipboard = rememberClipboardCopy()
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
@@ -88,7 +87,7 @@ fun DetailsSheet(
                             Column(Modifier.padding(14.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
-                                        Icons.Outlined.CallSplit,
+                                        Icons.AutoMirrored.Outlined.CallSplit,
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -101,7 +100,7 @@ fun DetailsSheet(
                                     )
                                     branch.branch?.let { name ->
                                         IconButton(
-                                            onClick = { clipboard.setText(AnnotatedString(name)) },
+                                            onClick = { copyToClipboard(name) },
                                         ) {
                                             Icon(
                                                 Icons.Outlined.ContentCopy,
@@ -120,7 +119,7 @@ fun DetailsSheet(
                                     Spacer(Modifier.height(10.dp))
                                     OutlinedButton(onClick = { openUrl(context, prUrl) }) {
                                         Icon(
-                                            Icons.Outlined.OpenInNew,
+                                            Icons.AutoMirrored.Outlined.OpenInNew,
                                             contentDescription = null,
                                             modifier = Modifier.size(16.dp),
                                         )
@@ -179,7 +178,7 @@ fun DetailsSheet(
                         )
                         IconButton(
                             onClick = {
-                                clipboard.setText(AnnotatedString(detail.summary.id))
+                                copyToClipboard(detail.summary.id)
                             },
                         ) {
                             Icon(

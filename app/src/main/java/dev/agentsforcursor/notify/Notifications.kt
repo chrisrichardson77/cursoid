@@ -73,7 +73,13 @@ object Notifications {
         status: RunStatus,
         summary: String?,
     ) {
-        if (!canPost(context)) return
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
 
         val headline = when (status) {
             RunStatus.ERROR -> "Stopped with an error"

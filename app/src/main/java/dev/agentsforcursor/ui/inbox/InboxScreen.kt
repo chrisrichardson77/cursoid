@@ -50,7 +50,6 @@ import dev.agentsforcursor.ui.components.SkeletonList
 import dev.agentsforcursor.ui.theme.MonoStyle
 import dev.agentsforcursor.util.TimeFormat
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InboxScreen(
     container: AppContainer,
@@ -61,6 +60,28 @@ fun InboxScreen(
     val viewModel = appViewModel { InboxViewModel(container) }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    InboxContent(
+        state = state,
+        onFilterChange = viewModel::setFilter,
+        onRefresh = viewModel::refresh,
+        onLoadMore = viewModel::loadMore,
+        onOpenAgent = onOpenAgent,
+        onNewAgent = onNewAgent,
+        onOpenSettings = onOpenSettings,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InboxContent(
+    state: InboxViewModel.State,
+    onFilterChange: (InboxViewModel.Filter) -> Unit,
+    onRefresh: () -> Unit,
+    onLoadMore: () -> Unit,
+    onOpenAgent: (String) -> Unit,
+    onNewAgent: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -111,7 +132,7 @@ fun InboxScreen(
                 InboxViewModel.Filter.entries.forEach { filter ->
                     FilterChip(
                         selected = state.filter == filter,
-                        onClick = { viewModel.setFilter(filter) },
+                        onClick = { onFilterChange(filter) },
                         label = { Text(filter.label) },
                         shape = RoundedCornerShape(999.dp),
                         colors = FilterChipDefaults.filterChipColors(),
@@ -121,7 +142,7 @@ fun InboxScreen(
 
             PullToRefreshBox(
                 isRefreshing = state.refreshing,
-                onRefresh = viewModel::refresh,
+                onRefresh = onRefresh,
                 modifier = Modifier.fillMaxSize(),
             ) {
                 when {
@@ -130,7 +151,7 @@ fun InboxScreen(
                     state.error != null && state.agents.isEmpty() -> Column(
                         Modifier.padding(16.dp),
                     ) {
-                        ErrorCard(message = state.error!!, onRetry = viewModel::refresh)
+                        ErrorCard(message = state.error!!, onRetry = onRefresh)
                     }
 
                     state.visibleAgents.isEmpty() -> EmptyState(
@@ -148,8 +169,6 @@ fun InboxScreen(
 
                             else -> "Switch to All to see the rest of your agents."
                         },
-                        actionLabel = "New agent".takeIf { state.filter == InboxViewModel.Filter.ALL },
-                        onAction = onNewAgent.takeIf { state.filter == InboxViewModel.Filter.ALL },
                     )
 
                     else -> LazyColumn(
@@ -163,7 +182,7 @@ fun InboxScreen(
                     ) {
                         if (state.error != null) {
                             item {
-                                ErrorCard(message = state.error!!, onRetry = viewModel::refresh)
+                                ErrorCard(message = state.error!!, onRetry = onRefresh)
                             }
                         }
                         items(state.visibleAgents, key = AgentSummary::id) { agent ->
@@ -172,7 +191,7 @@ fun InboxScreen(
                         if (state.nextCursor != null) {
                             item {
                                 OutlinedButton(
-                                    onClick = viewModel::loadMore,
+                                    onClick = onLoadMore,
                                     enabled = !state.loadingMore,
                                     modifier = Modifier.fillMaxWidth(),
                                 ) {
