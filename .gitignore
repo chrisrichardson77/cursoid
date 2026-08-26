@@ -9,9 +9,12 @@ captures/
 *.apk
 *.aab
 !dist/*.apk
+!dist/*.aab
 *.keystore
 !gradle/wrapper/gradle-wrapper.jar
 
 # Local release signing; never commit this or the keystore it points at.
 keystore.properties
 *.jks
+upload-keystore.properties
+*.p12

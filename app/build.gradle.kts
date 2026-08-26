@@ -7,27 +7,44 @@ plugins {
 }
 
 /**
- * Release signing is opt-in: point `keystore.properties` (or the matching environment variables) at
- * a keystore and release builds are signed. Without it the release variant stays unsigned, so a
- * fresh clone still builds.
+ * Signing is opt-in and there are two keys, because Play will not accept the sideload key:
+ *
+ *  - `keystore.properties` — the ECDSA P-256 key that signs sideloaded APKs.
+ *  - `upload-keystore.properties` — an RSA 2048 key for Play uploads, selected with `-PplayUpload`.
+ *
+ * With neither present the release variant stays unsigned, so a fresh clone still builds.
  */
-val keystoreConfig: Properties? = rootProject.file("keystore.properties")
-    .takeIf { it.exists() }
-    ?.let { file -> Properties().apply { file.inputStream().use(::load) } }
+class SigningKey(
+    private val propertiesFile: File,
+    private val environmentPrefix: String,
+) {
+    private val properties: Properties? = propertiesFile
+        .takeIf { it.exists() }
+        ?.let { file -> Properties().apply { file.inputStream().use(::load) } }
 
-fun signingValue(key: String, environmentVariable: String): String? =
-    keystoreConfig?.getProperty(key) ?: System.getenv(environmentVariable)
+    private fun value(key: String, variable: String): String? =
+        properties?.getProperty(key) ?: System.getenv("${environmentPrefix}_$variable")
 
-val keystorePath = signingValue("storeFile", "CURSOID_KEYSTORE")
-val keystorePassword = signingValue("storePassword", "CURSOID_KEYSTORE_PASSWORD")
-val keystoreAlias = signingValue("keyAlias", "CURSOID_KEY_ALIAS")
-val keystoreAliasPassword = signingValue("keyPassword", "CURSOID_KEY_PASSWORD")
-val hasReleaseKey = listOf(
-    keystorePath,
-    keystorePassword,
-    keystoreAlias,
-    keystoreAliasPassword,
-).all { !it.isNullOrBlank() } && file(keystorePath!!).exists()
+    val path: String? = value("storeFile", "KEYSTORE")
+    val storePassword: String? = value("storePassword", "KEYSTORE_PASSWORD")
+    val alias: String? = value("keyAlias", "KEY_ALIAS")
+    val aliasPassword: String? = value("keyPassword", "KEY_PASSWORD")
+
+    val isUsable: Boolean =
+        listOf(path, storePassword, alias, aliasPassword).all { !it.isNullOrBlank() } &&
+            File(path!!).exists()
+}
+
+val sideloadKey = SigningKey(rootProject.file("keystore.properties"), "CURSOID")
+val uploadKey = SigningKey(rootProject.file("upload-keystore.properties"), "CURSOID_UPLOAD")
+
+/** `./gradlew bundleRelease -PplayUpload` produces an AAB signed with the Play upload key. */
+val forPlayUpload = providers.gradleProperty("playUpload").isPresent
+val activeKey = if (forPlayUpload) uploadKey else sideloadKey
+
+if (forPlayUpload && !uploadKey.isUsable) {
+    error("-PplayUpload needs upload-keystore.properties or the CURSOID_UPLOAD_* variables.")
+}
 
 android {
     namespace = "dev.cursoid"
@@ -42,13 +59,14 @@ android {
     }
 
     signingConfigs {
-        if (hasReleaseKey) {
-            create("sideload") {
-                storeFile = file(keystorePath!!)
-                storePassword = keystorePassword
-                keyAlias = keystoreAlias
-                keyPassword = keystoreAliasPassword
+        if (activeKey.isUsable) {
+            create("cursoid") {
+                storeFile = file(activeKey.path!!)
+                storePassword = activeKey.storePassword
+                keyAlias = activeKey.alias
+                keyPassword = activeKey.aliasPassword
                 // minSdk 26 means v1 JAR signing is dead weight; v3 buys key rotation later.
+                // App bundles are signed jar-style regardless of these APK-only switches.
                 enableV1Signing = false
                 enableV2Signing = true
                 enableV3Signing = true
@@ -63,8 +81,8 @@ android {
             // Distinguishable on the launcher when both variants are sideloaded together.
             resValue("string", "app_name", "Cursoid debug")
             // Share the sideload key so debug builds also update in place across machines.
-            if (hasReleaseKey) {
-                signingConfig = signingConfigs.getByName("sideload")
+            if (activeKey.isUsable) {
+                signingConfig = signingConfigs.getByName("cursoid")
             }
         }
         release {
@@ -75,8 +93,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            if (hasReleaseKey) {
-                signingConfig = signingConfigs.getByName("sideload")
+            if (activeKey.isUsable) {
+                signingConfig = signingConfigs.getByName("cursoid")
             }
         }
     }

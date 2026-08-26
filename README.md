@@ -105,7 +105,21 @@ EOF
 `CURSOID_KEYSTORE`, `CURSOID_KEYSTORE_PASSWORD`, `CURSOID_KEY_ALIAS`, and `CURSOID_KEY_PASSWORD`
 work too, which is the easier path in CI. Signing is skipped entirely if neither is present.
 
-### Before a Play listing
+### Play
+
+[`docs/play-listing.md`](docs/play-listing.md) is the submission pack: listing copy, data safety
+answers, permission justifications, content rating notes, and the graphics under
+[`docs/play`](docs/play). [`docs/privacy-policy.md`](docs/privacy-policy.md) is the policy Play
+requires you to host. A signed, uploadable bundle is at `dist/cursoid-0.1.0.aab`:
+
+```bash
+./gradlew bundleRelease -PplayUpload
+```
+
+The rest needs a human with a verified developer account — Play's API cannot create an app, and no
+release is permitted until the Console declarations are answered.
+
+### Key hygiene
 
 **The sideload key cannot be the upload key.** Play requires an upload key that is RSA, 2048 bits or
 more, and explicitly rejects EC and DSA keys, so generate a second keystore when you list:
