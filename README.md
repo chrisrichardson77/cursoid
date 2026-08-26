@@ -52,7 +52,16 @@ Prebuilt APKs live in [`dist/`](dist), signed and ready to install on Android 8.
 | `cursoid-0.1.0-debug.apk` | 22 MB | Unminified fallback for isolating an R8 problem. |
 
 They use different application IDs (`dev.cursoid` and `dev.cursoid.debug`) and different launcher
-labels, so both can sit on the phone at once.
+labels, so both can sit on the phone at once. Both are signed with the same ECDSA P-256 key using
+APK Signature Scheme v2 and v3 — v1 JAR signing is off, since nothing below API 26 can install this
+anyway.
+
+If you already installed a build signed with a different key, Android will refuse the update with
+`INSTALL_FAILED_UPDATE_INCOMPATIBLE`. Uninstall first:
+
+```bash
+adb uninstall dev.cursoid
+```
 
 Over USB:
 
@@ -81,11 +90,12 @@ Release builds are signed only when a key is configured, so a fresh clone still 
 own, create a keystore and a `keystore.properties` at the repo root (both are gitignored):
 
 ```bash
-keytool -genkeypair -keystore cursoid.jks -storetype PKCS12 -keyalg RSA -keysize 4096 \
+keytool -genkeypair -keystore cursoid.p12 -storetype PKCS12 \
+  -keyalg EC -groupname secp256r1 -sigalg SHA256withECDSA \
   -validity 10000 -alias cursoid -dname "CN=Cursoid"
 
 cat > keystore.properties <<'EOF'
-storeFile=/absolute/path/to/cursoid.jks
+storeFile=/absolute/path/to/cursoid.p12
 storePassword=…
 keyAlias=cursoid
 keyPassword=…
@@ -97,10 +107,23 @@ work too, which is the easier path in CI. Signing is skipped entirely if neither
 
 ### Before a Play listing
 
+**The sideload key cannot be the upload key.** Play requires an upload key that is RSA, 2048 bits or
+more, and explicitly rejects EC and DSA keys, so generate a second keystore when you list:
+
+```bash
+keytool -genkeypair -keystore cursoid-upload.p12 -storetype PKCS12 \
+  -keyalg RSA -keysize 2048 -sigalg SHA256withRSA \
+  -validity 10000 -alias upload -dname "CN=Cursoid"
+```
+
+That costs nothing, because Play App Signing keeps the upload key and the app signing key separate
+by design — Google's own guidance is that they *should* differ, and an upload key can be reset if
+it's lost. So the EC key above stays the sideload key for as long as you want it, and the RSA key
+only ever touches uploads.
+
 The name is a portmanteau of "cursor" and the *-oid* of "android", and this is an unofficial client,
 so keep the title free of anything implying endorsement and leave the "not affiliated with Anysphere"
-line on the sign-in and Settings screens. Play App Signing means the upload key does not have to be
-the one that signed the APKs above.
+line on the sign-in and Settings screens.
 
 ### Signing in
 

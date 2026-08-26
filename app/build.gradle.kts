@@ -43,11 +43,15 @@ android {
 
     signingConfigs {
         if (hasReleaseKey) {
-            create("release") {
+            create("sideload") {
                 storeFile = file(keystorePath!!)
                 storePassword = keystorePassword
                 keyAlias = keystoreAlias
                 keyPassword = keystoreAliasPassword
+                // minSdk 26 means v1 JAR signing is dead weight; v3 buys key rotation later.
+                enableV1Signing = false
+                enableV2Signing = true
+                enableV3Signing = true
             }
         }
     }
@@ -58,6 +62,10 @@ android {
             versionNameSuffix = "-debug"
             // Distinguishable on the launcher when both variants are sideloaded together.
             resValue("string", "app_name", "Cursoid debug")
+            // Share the sideload key so debug builds also update in place across machines.
+            if (hasReleaseKey) {
+                signingConfig = signingConfigs.getByName("sideload")
+            }
         }
         release {
             resValue("string", "app_name", "Cursoid")
@@ -68,7 +76,7 @@ android {
                 "proguard-rules.pro",
             )
             if (hasReleaseKey) {
-                signingConfig = signingConfigs.getByName("release")
+                signingConfig = signingConfigs.getByName("sideload")
             }
         }
     }
