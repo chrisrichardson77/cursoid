@@ -56,21 +56,43 @@ labels, so both can sit on the phone at once. Both are signed with the same ECDS
 APK Signature Scheme v2 and v3 — v1 JAR signing is off, since nothing below API 26 can install this
 anyway.
 
-If you already installed a build signed with a different key, Android will refuse the update with
-`INSTALL_FAILED_UPDATE_INCOMPATIBLE`. Uninstall first:
+### The one command
+
+Clone this branch on the machine the phone is plugged into, then:
 
 ```bash
-adb uninstall dev.cursoid
+./scripts/install-on-phone.sh
 ```
 
-Over USB:
+It finds `adb` wherever your SDK happens to live, installs the release APK, and opens the app. When
+something goes wrong it says which thing: a power-only cable, USB debugging still off, an
+unaccepted authorisation prompt, a vendor lock like Xiaomi's "Install via USB", or a previous
+install signed with a different key (`--force` clears that one out). `--debug` installs the
+unminified build instead.
+
+### No cable
+
+Android 11 and newer can install over Wi-Fi, with the phone and computer on the same network:
 
 ```bash
-adb install -r dist/cursoid-0.1.0.apk
+./scripts/install-on-phone.sh --wifi
 ```
 
-Or copy the APK to the phone and open it, allowing installs from your file manager when prompted.
-Android will warn about an unknown developer, which is expected for a self-signed build.
+That walks through Developer options > Wireless debugging > *Pair device with pairing code*, which
+gives you an address and a six-digit code to paste in. Note that the pairing dialog and the
+Wireless debugging screen show *different* ports; the script asks for each in turn.
+
+### No adb at all
+
+Download `dist/cursoid-0.1.0.apk` straight to the phone from this repo's web UI and tap it, allowing
+installs from your browser or file manager when prompted. Android warns about an unknown developer,
+which is expected for a self-signed build.
+
+### Signing
+
+If you already installed a build signed with a different key, Android refuses the update with
+`INSTALL_FAILED_UPDATE_INCOMPATIBLE`. Clear it with `adb uninstall dev.cursoid`, or let the script
+do it. That wipes the old copy's stored API key and settings.
 
 If the release build misbehaves where the debug build doesn't, that points at the R8 configuration in
 [`app/proguard-rules.pro`](app/proguard-rules.pro) rather than app logic.
