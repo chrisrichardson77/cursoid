@@ -1,5 +1,7 @@
 # Cursoid — an Android client for Cursor cloud agents
 
+[![build](https://github.com/chrisrichardson77/cursoid/actions/workflows/build.yml/badge.svg)](https://github.com/chrisrichardson77/cursoid/actions/workflows/build.yml)
+
 Cursor ships a native iOS app. On Android the official answer is still the web PWA at
 [cursor.com/agents](https://cursor.com/agents). This is a native Android client that closes most of
 that gap, built on the public [Cloud Agents API v1](https://cursor.com/docs/cloud-agent/api/endpoints).
