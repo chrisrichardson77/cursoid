@@ -11,6 +11,7 @@ set -uo pipefail
 
 visibility=private
 name=""
+land_on_main=1
 
 usage() {
   cat <<'EOF'
@@ -21,9 +22,13 @@ Creates a GitHub repository and pushes this project to it.
   <name>       repository name to create, e.g. cursoid
   --public     public repo, so the Releases page is reachable without a login
   --private    private repo (the default)
+  --as-is      keep the current branch layout instead of landing the code on main
 
 The token needs the `repo` scope, plus `workflow` to push .github/workflows.
 An existing repository of that name is reused rather than recreated.
+
+By default the code lands on main, which only happens when main can fast-forward
+to the current branch, so nothing is rewritten or discarded.
 EOF
 }
 
@@ -31,6 +36,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --public)  visibility=public ;;
     --private) visibility=private ;;
+    --as-is)   land_on_main=0 ;;
     -h|--help) usage; exit 0 ;;
     -*) echo "Unknown option: $1" >&2; usage; exit 1 ;;
     *) name="$1" ;;
@@ -130,6 +136,26 @@ chmod 700 "$askpass"
 export GIT_ASKPASS="$askpass" GIT_PUSH_TOKEN="$token"
 push_url="https://x-access-token@github.com/$owner/$name.git"
 
+# --- decide what the default branch should be ---------------------------------
+
+current="$(git rev-parse --abbrev-ref HEAD)"
+default_branch="$current"
+
+if [ "$land_on_main" -eq 1 ] && [ "$current" != "main" ]; then
+  if ! git rev-parse --verify --quiet main >/dev/null; then
+    git branch main "$current"
+    default_branch=main
+    step "Created main at the tip of $current"
+  elif git merge-base --is-ancestor main "$current"; then
+    git branch -f main "$current"
+    default_branch=main
+    step "Fast-forwarded main to $current"
+  else
+    step "main has commits of its own, so the default branch stays $current."
+    step "Pass --as-is to silence this, or merge main yourself first."
+  fi
+fi
+
 say "Pushing every branch and tag"
 if ! git push --all "$push_url" 2>&1 | sed 's/^/  /'; then
   err "Push failed. If it mentions 'workflow', the token lacks the 'workflow' scope."
@@ -137,13 +163,10 @@ if ! git push --all "$push_url" 2>&1 | sed 's/^/  /'; then
 fi
 git push --tags "$push_url" 2>&1 | sed 's/^/  /'
 
-# --- point the default branch at the code -------------------------------------
-
-current="$(git rev-parse --abbrev-ref HEAD)"
 code="$(api PATCH "/repos/$owner/$name" "$(python3 -c "
-import json,sys;print(json.dumps({'default_branch': sys.argv[1]}))" "$current")")"
+import json,sys;print(json.dumps({'default_branch': sys.argv[1]}))" "$default_branch")")"
 if [ "$code" = "200" ]; then
-  step "Default branch set to $current"
+  step "Default branch set to $default_branch"
 else
   step "Could not set the default branch (HTTP $code); do it in repo settings."
 fi
