@@ -84,15 +84,29 @@ Wireless debugging screen show *different* ports; the script asks for each in tu
 
 ### No adb at all
 
-Download `dist/cursoid-0.1.0.apk` straight to the phone from this repo's web UI and tap it, allowing
-installs from your browser or file manager when prompted. Android warns about an unknown developer,
-which is expected for a self-signed build.
+Open the [Releases](../../releases) page on the phone itself and tap the APK, allowing installs from
+your browser when prompted. Failing that, `dist/cursoid-0.1.0.apk` in the tree works the same way.
+Android warns about an unknown developer, which is expected for a self-signed build.
 
 ### Signing
 
 If you already installed a build signed with a different key, Android refuses the update with
 `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. Clear it with `adb uninstall dev.cursoid`, or let the script
 do it. That wipes the old copy's stored API key and settings.
+
+The key that signed the APKs in `dist/` is gone — it only ever existed on an ephemeral build
+machine. Anything built from here on uses a new key, so expect to uninstall once when moving from a
+`dist/` build to a CI-built one. See [docs/ci-signing.md](docs/ci-signing.md).
+
+## Continuous integration
+
+[`.github/workflows/build.yml`](.github/workflows/build.yml) runs the 35 JVM tests, Android lint and
+a debug APK build on every push, attaching the APK and the rendered screens as run artifacts.
+
+Pushing a `v*` tag additionally builds a signed release APK — plus a Play `.aab` if the upload key is
+configured — and publishes a GitHub Release with them attached, which is what makes the Releases
+page a one-tap install from the phone. The signing secrets that requires are documented in
+[docs/ci-signing.md](docs/ci-signing.md); without them, ordinary pushes still build and test fine.
 
 If the release build misbehaves where the debug build doesn't, that points at the R8 configuration in
 [`app/proguard-rules.pro`](app/proguard-rules.pro) rather than app logic.
