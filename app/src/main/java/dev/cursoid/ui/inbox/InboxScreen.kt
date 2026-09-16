@@ -151,7 +151,7 @@ fun InboxContent(
                     state.error != null && state.agents.isEmpty() -> Column(
                         Modifier.padding(16.dp),
                     ) {
-                        ErrorCard(message = state.error!!, onRetry = onRefresh)
+                        ErrorCard(message = state.error, onRetry = onRefresh)
                     }
 
                     state.visibleAgents.isEmpty() -> EmptyState(
@@ -182,7 +182,7 @@ fun InboxContent(
                     ) {
                         if (state.error != null) {
                             item {
-                                ErrorCard(message = state.error!!, onRetry = onRefresh)
+                                ErrorCard(message = state.error, onRetry = onRefresh)
                             }
                         }
                         items(state.visibleAgents, key = AgentSummary::id) { agent ->

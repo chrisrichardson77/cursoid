@@ -167,7 +167,7 @@ fun SignInContent(
 
                 if (state.error != null) {
                     Spacer(Modifier.height(12.dp))
-                    ErrorCard(message = state.error!!)
+                    ErrorCard(message = state.error)
                 }
 
                 Spacer(Modifier.height(20.dp))
