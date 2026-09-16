@@ -9,6 +9,24 @@ that the key used for the APKs committed under `dist/` no longer exists: it live
 build machine that has since been wiped. A build signed with a new key cannot update those installs
 in place, so uninstall an older Cursoid once before installing a CI-built one.
 
+## Current state
+
+The four sideload secrets are already set on this repository, so tagging a release works today. That
+key is an ECDSA P-256 pair generated for CI, and it exists only inside GitHub Actions secrets —
+there is no copy anywhere else, and secrets cannot be read back out. Releases signed with it carry
+this certificate:
+
+```
+CN=Cursoid, O=Cursoid, C=GB
+SHA-256  876a017a2e386498dbc214e64d1ed416758fb28f500f25b2e38db83ea9920328
+```
+
+That is checkable against any downloaded APK with `apksigner verify --print-certs`. If you would
+rather hold the key yourself, generate a new one below and overwrite the secrets; the only cost is
+uninstalling Cursoid once, because the signature will no longer match. The Play upload key is not
+configured, and is worth generating on your own machine rather than in CI so a published app never
+depends on a key you cannot reach.
+
 ## Generate the keys
 
 Two keys, because Play will not accept the same one that signs sideloads. Run this on a machine you
